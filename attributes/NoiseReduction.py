@@ -11,7 +11,7 @@ Noise Reduction attributes for Seismic Data
 import dask.array as da
 import numpy as np
 from scipy import ndimage as ndi
-import util
+from . import util
 
 
 
@@ -29,7 +29,7 @@ class NoiseReduction():
     convolution
     """
     
-    def create_array(self, darray, kernel, preview):
+    def create_array(self, darray, kernel, preview=None):
         """
         Description
         -----------
@@ -69,7 +69,7 @@ class NoiseReduction():
         # Ghost Dask Array if operation specifies a kernel
         if kernel != None:
                 hw = tuple(np.array(kernel) // 2)
-                darray = da.ghost.ghost(darray, depth=hw, boundary='reflect')
+                darray = da.overlap.overlap(darray, depth=hw, boundary='reflect')
                 
         return(darray, chunks_init)
         

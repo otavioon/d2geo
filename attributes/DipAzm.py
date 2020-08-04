@@ -11,8 +11,8 @@ Dip & Azimuth Calculations for Seismic Data
 import numpy as np
 import dask.array as da
 from scipy import ndimage as ndi
-import util
-from SignalProcess import SignalProcess as sp
+from . import util
+from .SignalProcess import SignalProcess as sp
 
 
 class DipAzm():
@@ -56,7 +56,8 @@ class DipAzm():
         darray : Dask Array
         chunk_init : tuple (len 3), chunk size before ghosting.  Used in select cases
         """
-        
+    
+        # Compute chunk size and convert if not a Dask Array
         if not isinstance(darray, da.core.Array):  
             chunk_size = util.compute_chunk_size(darray.shape, 
                                                darray.dtype.itemsize, 
@@ -68,9 +69,10 @@ class DipAzm():
         else:
             chunks_init = darray.chunks
         
+        # Ghost Dask Array if operation specifies a kernel
         if kernel != None:
                 hw = tuple(np.array(kernel) // 2)
-                darray = da.ghost.ghost(darray, depth=hw, boundary='reflect')
+                darray = da.overlap.overlap(darray, depth=hw, boundary='reflect')
                 
         return(darray, chunks_init)
         

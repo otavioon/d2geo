@@ -12,8 +12,8 @@ Edge Detection Attributes for Seismic Data
 import dask.array as da
 import numpy as np
 from scipy import ndimage as ndi
-import util
-from SignalProcess import SignalProcess as sp
+from . import util
+from .SignalProcess import SignalProcess as sp
 
 
 
@@ -34,7 +34,7 @@ class EdgeDetection():
     volume_curvature
     """
     
-    def create_array(self, darray, kernel, preview):
+    def create_array(self, darray, kernel, preview=None):
         """
         Description
         -----------
@@ -74,10 +74,10 @@ class EdgeDetection():
         # Ghost Dask Array if operation specifies a kernel
         if kernel != None:
                 hw = tuple(np.array(kernel) // 2)
-                darray = da.ghost.ghost(darray, depth=hw, boundary='reflect')
+                darray = da.overlap.overlap(darray, depth=hw, boundary='reflect')
                 
         return(darray, chunks_init)
-
+    
 
     def semblance(self, darray, kernel=(3,3,9), preview=None):
         """
@@ -158,7 +158,7 @@ class EdgeDetection():
             gst = np.moveaxis(gst, [0,1], [-2,-1])
             gst = gst.reshape((-1, 3, 3))
             
-            eigs = np.sorgst(np.linalg.eigvalsh(gst))
+            eigs = np.sort(np.linalg.eigvalsh(gst))
             e1 = eigs[:, 2].reshape(chunk_shape)
             e2 = eigs[:, 1].reshape(chunk_shape)
             e3 = eigs[:, 0].reshape(chunk_shape)

@@ -11,7 +11,7 @@ Frequency attributes for Seismic data
 import dask.array as da
 import numpy as np
 from scipy import signal
-import util
+from . import util
 
 
 
@@ -31,7 +31,7 @@ class Frequency():
     cwt_ormsby
     """
     
-    def create_array(self, darray, kernel, preview):
+    def create_array(self, darray, kernel, preview=None):
         """
         Description
         -----------
@@ -71,7 +71,7 @@ class Frequency():
         # Ghost Dask Array if operation specifies a kernel
         if kernel != None:
                 hw = tuple(np.array(kernel) // 2)
-                darray = da.ghost.ghost(darray, depth=hw, boundary='reflect')
+                darray = da.overlap.overlap(darray, depth=hw, boundary='reflect')
                 
         return(darray, chunks_init)
         

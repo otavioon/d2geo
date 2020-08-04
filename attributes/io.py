@@ -27,8 +27,8 @@ def segy_read(segy_path, out_path, out_name):
     trace_inlines = segy_file.attributes(segyio.TraceField.INLINE_3D)[:]
     trace_xlines = segy_file.attributes(segyio.TraceField.CROSSLINE_3D)[:]
     
-    trace_inlines_unique = np.unique(trace_inlines)
-    trace_xlines_unique = np.unique(trace_xlines)
+    trace_inlines_unique = np.array(trace_inlines)
+    trace_xlines_unique = np.array(trace_xlines)
     
     num_inline = trace_inlines_unique.size
     num_xline = trace_xlines_unique.size
@@ -72,6 +72,8 @@ def segy_read(segy_path, out_path, out_name):
         dset.attrs['max_zsample'] = max_zsample
                 
         coords.map_blocks(write, segy_file, dset, dtype=np.float32).compute()
+        
+    return dset
         
 
 

@@ -10,8 +10,8 @@ Complex Trace Attributes for Seismic Data
 # Import Libraries
 import dask.array as da
 import numpy as np
-import util
-from SignalProcess import SignalProcess as sp
+from . import util
+from .SignalProcess import SignalProcess as sp
 
 
 class ComplexAttributes():
@@ -66,6 +66,7 @@ class ComplexAttributes():
         """
     
         # Compute chunk size and convert if not a Dask Array
+        
         if not isinstance(darray, da.core.Array):  
             chunk_size = util.compute_chunk_size(darray.shape, 
                                                darray.dtype.itemsize, 
@@ -80,9 +81,42 @@ class ComplexAttributes():
         # Ghost Dask Array if operation specifies a kernel
         if kernel != None:
                 hw = tuple(np.array(kernel) // 2)
-                darray = da.ghost.ghost(darray, depth=hw, boundary='reflect')
+                darray = da.overlap.overlap(darray, depth=hw, boundary='reflect')
                 
         return(darray, chunks_init)
+    
+    
+    def instantaneous_phase(self, darray, preview=None):
+        """
+        Description
+        -----------
+        Compute the Instantaneous Phase of the input data
+        
+        Parameters
+        ----------
+        darray : Array-like, acceptable inputs include Numpy, HDF5, or Dask Arrays
+        
+        Keywork Arguments
+        -----------------    
+        preview : str, enables or disables preview mode and specifies direction
+            Acceptable inputs are (None, 'inline', 'xline', 'z')
+            Optimizes chunk size in different orientations to facilitate rapid
+            screening of algorithm output
+        
+        Returns
+        -------
+        result : Dask Array
+        """
+        
+        kernel = (1,1,25)
+        darray, chunks_init = self.create_array(darray, kernel, preview=preview)
+        result = darray.map_blocks(util.hilbert, dtype=darray.dtype)
+        result = da.angle(result)
+        result = da.rad2deg(result)
+        result = util.trim_dask_array(result, kernel)
+        
+        return result
+            
         
     
     def envelope(self, darray, preview=None):
@@ -113,40 +147,8 @@ class ComplexAttributes():
         result = da.absolute(analytical_trace)
         result = util.trim_dask_array(result, kernel)
         
-        return(result) 
+        return result 
         
-    
-    
-    def instantaneous_phase(self, darray, preview=None):
-        """
-        Description
-        -----------
-        Compute the Instantaneous Phase of the input data
-        
-        Parameters
-        ----------
-        darray : Array-like, acceptable inputs include Numpy, HDF5, or Dask Arrays
-        
-        Keywork Arguments
-        -----------------    
-        preview : str, enables or disables preview mode and specifies direction
-            Acceptable inputs are (None, 'inline', 'xline', 'z')
-            Optimizes chunk size in different orientations to facilitate rapid
-            screening of algorithm output
-        
-        Returns
-        -------
-        result : Dask Array
-        """
-        
-        kernel = (1,1,25)
-        darray, chunks_init = self.create_array(darray, kernel, preview=preview)
-        analytical_trace = darray.map_blocks(util.hilbert, dtype=darray.dtype)
-        result = da.rad2deg(da.angle(analytical_trace))
-        result = util.trim_dask_array(result, kernel)
-        
-        return(result)
-            
             
     def cosine_instantaneous_phase(self, darray, preview=None):
         """
@@ -203,10 +205,11 @@ class ComplexAttributes():
         darray, chunks_init = self.create_array(darray, preview=preview)        
         env = self.envelope(darray)
         env_prime = sp().first_derivative(env, axis=-1)
-        result = env_prime / env
-        result = da.clip(result, -1, 1)
+        #result = env_prime / env
+        #print("Env prime type: {}, type env: {}".format(type(env_prime), type(env)))
+        #result = da.clip(result, -1, 1)
             
-        return(result)
+        return(env_prime)
             
     
     

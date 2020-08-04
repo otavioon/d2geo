@@ -139,9 +139,8 @@ def trim_dask_array(in_data, kernel):
     
     # Compute half windows and assign to dict
     hw = tuple(np.array(kernel) // 2)    
-    axes = {0 : hw[0], 1 : hw[1], 2: hw[2]}
-    
-    return(da.ghost.trim_internal(in_data, axes=axes))
+    axes = {0 : hw[0], 1 : hw[1], 2: hw[2]}    
+    return(da.overlap.trim_internal(in_data, axes=axes))
     
     
 
@@ -329,21 +328,25 @@ def hilbert(in_data):
     out : Numpy Array
     """
     
-    N = in_data.shape[-1]
-    
-    Xf = np.fft.fftpack.fft(in_data, n=N, axis=-1)
-    
-    h = np.zeros(N)
-    if N % 2 == 0:
-        h[0] = h[N // 2] = 1
-        h[1:N // 2] = 2
-    else:
-        h[0] = 1
-        h[1:(N + 1) // 2] = 2
+    try:
+        N = in_data.shape[-1]
+        
+        Xf = np.fft.fft(in_data, n=N, axis=-1)
+        
+        h = np.zeros(N)
+        if N % 2 == 0:
+            h[0] = h[N // 2] = 1
+            h[1:N // 2] = 2
+        else:
+            h[0] = 1
+            h[1:(N + 1) // 2] = 2
 
-    if in_data.ndim > 1:
-        ind = [np.newaxis] * in_data.ndim
-        ind[-1] = slice(None)
-        h = h[ind]
-    x = np.fft.fftpack.ifft(Xf * h, axis=-1)
-    return x
+        if in_data.ndim > 1:
+            ind = [np.newaxis] * in_data.ndim
+            ind[-1] = slice(None)
+            h = h[ind]
+        x = np.fft.ifft(Xf * h, axis=-1)
+        return x
+    except Exception as e:
+        print(e)
+        return None

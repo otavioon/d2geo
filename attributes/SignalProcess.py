@@ -12,7 +12,7 @@ import dask.array as da
 import numpy as np
 from scipy import ndimage as ndi
 from scipy import signal
-import util
+from . import util
 
 
 
@@ -38,7 +38,7 @@ class SignalProcess():
     phase_rotation
     """
     
-    def create_array(self, darray, kernel, preview):
+    def create_array(self, darray, kernel, preview=None):
         """
         Description
         -----------
@@ -78,7 +78,7 @@ class SignalProcess():
         # Ghost Dask Array if operation specifies a kernel
         if kernel != None:
                 hw = tuple(np.array(kernel) // 2)
-                darray = da.ghost.ghost(darray, depth=hw, boundary='reflect')
+                darray = da.overlap.overlap(darray, depth=hw, boundary='reflect')
                 
         return(darray, chunks_init)
         
@@ -115,7 +115,7 @@ class SignalProcess():
                                    axis=axes[0], dtype=darray.dtype)
         result2 = result1.map_blocks(ndi.correlate1d, weights=[0.178947,0.642105,0.178947], 
                                      axis=axes[1], dtype=darray.dtype)
-        result = util.trim_dask_array(result2, kernel)
+        result = util.trim_dask_array(result0, kernel)
         
         return(result)
         
