@@ -348,5 +348,4 @@ def hilbert(in_data):
         x = np.fft.ifft(Xf * h, axis=-1)
         return x
     except Exception as e:
-        #print(e)
         return None
